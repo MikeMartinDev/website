@@ -34,10 +34,9 @@ The entities that a Pod can communicate with are identified through a combinatio
    regardless of the IP address of the Pod or the node)
 
 When defining a pod- or namespace- based NetworkPolicy, you use a
-{{< glossary_tooltip text="selector" term_id="selector">}} to specify what traffic is allowed to
-and from the Pod(s) that match the selector.
+{{< glossary_tooltip text="selector" term_id="selector">}} to specify which Pod(s) the policy applies to.
 
-Meanwhile, when IP based NetworkPolicies are created, we define policies based on IP blocks (CIDR ranges).
+When defining an IP-based NetworkPolicies, you use IP blocks (CIDR ranges) to specify which traffic it applies to.
 
 <!-- body -->
 ## Prerequisites
@@ -46,19 +45,19 @@ Network policies are implemented by the [network plugin](/docs/concepts/extend-k
 To use network policies, you must be using a networking solution which supports NetworkPolicy.
 Creating a NetworkPolicy resource without a controller that implements it will have no effect.
 
-## The Two Sorts of Pod Isolation
+## The Two Types of Pod Isolation
 
-There are two sorts of isolation for a pod: isolation for egress, and isolation for ingress.
-They concern what connections may be established. "Isolation" here is not absolute, rather it
+There are two types of isolation for a pod: egress and ingress.
+These concern what connections may be established. "Isolation" here is not absolute, rather it
 means "some restrictions apply". The alternative, "non-isolated for $direction", means that no
-restrictions apply in the stated direction.  The two sorts of isolation (or not) are declared
-independently, and are both relevant for a connection from one pod to another.
+restrictions apply in the stated direction.  The two types of isolation my be declared
+independently, and both are relevant for a connection from one pod to another.
 
 By default, a pod is non-isolated for egress; all outbound connections are allowed.
 A pod is isolated for egress if there is any NetworkPolicy that both selects the pod and has
 "Egress" in its `policyTypes`; we say that such a policy applies to the pod for egress.
 When a pod is isolated for egress, the only allowed connections from the pod are those allowed by
-the `egress` list of some NetworkPolicy that applies to the pod for egress.
+the `egress` list of some NetworkPolicy that applies to the pod.
 The effects of those `egress` lists combine additively.
 
 By default, a pod is non-isolated for ingress; all inbound connections are allowed.
@@ -66,7 +65,7 @@ A pod is isolated for ingress if there is any NetworkPolicy that both selects th
 has "Ingress" in its `policyTypes`; we say that such a policy applies to the pod for ingress.
 When a pod is isolated for ingress, the only allowed connections into the pod are those from
 the pod's node and those allowed by the `ingress` list of some NetworkPolicy that applies to
-the pod for ingress. The effects of those `ingress` lists combine additively.
+the pod. The effects of those `ingress` lists combine additively.
 
 Network policies do not conflict; they are additive. If any policy or policies apply to a given
 pod for a given direction, the connections allowed in that direction from that pod is the union of
@@ -74,7 +73,7 @@ what the applicable policies allow. Thus, order of evaluation does not affect th
 
 For a connection from a source pod to a destination pod to be allowed, both the egress policy on
 the source pod and the ingress policy on the destination pod need to allow the connection. If
-either side does not allow the connection, it will not happen.
+either side does not allow the connection, it will not be allowed.
 
 ## The NetworkPolicy resource {#networkpolicy-resource}
 
@@ -87,7 +86,7 @@ An example NetworkPolicy might look like this:
 
 {{< note >}}
 POSTing this to the API server for your cluster will have no effect unless your chosen networking
-solution supports network policy.
+solution supports network policies.
 {{< /note >}}
 
 __Mandatory Fields__: As with all other Kubernetes config, a NetworkPolicy needs `apiVersion`,
@@ -349,6 +348,12 @@ The value of the label is the namespace name.
 
 While NetworkPolicy cannot target a namespace by its name with some object field, you can use the
 standardized label to target a specific namespace.
+
+```
+    - namespaceSelector:
+        matchLabels:
+          "kubernetes.io/metadata.name": backend
+```
 
 ## What you can't do with network policies (at least, not yet)
 
